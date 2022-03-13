@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import App from '../renderer/App';
+import Home from '.';
 
-describe('App', () => {
+describe('Home', () => {
   it('should render', () => {
-    expect(render(<App />)).toBeTruthy();
+    expect(render(<Home />)).toBeTruthy();
   });
 });
