@@ -9,6 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
+import { readFileSync } from 'fs';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
@@ -54,14 +55,6 @@ const installExtensions = async () => {
       forceDownload
     )
     .catch(console.log);
-};
-
-const getFileFromUser = async () => {
-  const files = await dialog.showOpenDialog({
-    properties: ['openFile'],
-  });
-
-  console.log(files);
 };
 
 const createWindow = async () => {
@@ -122,6 +115,29 @@ const createWindow = async () => {
  * Add event listeners...
  */
 
+const getFileFromUser = async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    title: 'Open Power Note Document',
+    filters: [
+      {
+        name: 'Markdown Files',
+        extensions: ['md', 'markdown', 'mdown'],
+      },
+      {
+        name: 'Text Files',
+        extensions: ['txt', 'text'],
+      },
+    ],
+  });
+
+  const { canceled, filePaths } = result;
+  if (canceled || filePaths.length === 0) return null;
+
+  const file = readFileSync(filePaths[0]).toString();
+  return file;
+};
+
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
@@ -134,7 +150,10 @@ app
   .whenReady()
   .then(() => {
     createWindow();
-    getFileFromUser();
+
+    setTimeout(() => {
+      getFileFromUser();
+    }, 1000);
 
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
