@@ -26,10 +26,39 @@ export default class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
+const getFileFromUser = async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    title: 'Open Power Note Document',
+    filters: [
+      {
+        name: 'Markdown Files',
+        extensions: ['md', 'markdown', 'mdown'],
+      },
+      {
+        name: 'Text Files',
+        extensions: ['txt', 'text'],
+      },
+    ],
+  });
+
+  const { canceled, filePaths } = result;
+  if (canceled || filePaths.length === 0) return null;
+
+  const file = readFileSync(filePaths[0]).toString();
+  return file;
+};
+
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
+});
+
+ipcMain.handle('ipc-open-file', async () => {
+  const file = await getFileFromUser();
+
+  return file;
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -115,29 +144,6 @@ const createWindow = async () => {
  * Add event listeners...
  */
 
-const getFileFromUser = async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ['openFile'],
-    title: 'Open Power Note Document',
-    filters: [
-      {
-        name: 'Markdown Files',
-        extensions: ['md', 'markdown', 'mdown'],
-      },
-      {
-        name: 'Text Files',
-        extensions: ['txt', 'text'],
-      },
-    ],
-  });
-
-  const { canceled, filePaths } = result;
-  if (canceled || filePaths.length === 0) return null;
-
-  const file = readFileSync(filePaths[0]).toString();
-  return file;
-};
-
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
@@ -150,10 +156,6 @@ app
   .whenReady()
   .then(() => {
     createWindow();
-
-    setTimeout(() => {
-      getFileFromUser();
-    }, 1000);
 
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the

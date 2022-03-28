@@ -4,8 +4,8 @@ import { parse } from 'marked';
 const useParsedMarkdown = () => {
   const [parsedText, setParsedText] = useState('');
 
-  const parseText = (e) => {
-    const newText = parse(e.target.value, { sanitize: true });
+  const parseText = (text: string) => {
+    const newText = parse(text, { sanitize: true });
     setParsedText(newText);
   };
 
