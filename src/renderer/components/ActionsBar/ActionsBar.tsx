@@ -24,6 +24,13 @@ const ActionsBar = ({ content, file, onFileLoad }: ActionsBarProps) => {
     onFileLoad(newFile);
   }
 
+  const handleExportHtmlButton = async() => {
+    const renderedHtmlEl = document.querySelector('.rendered-html');
+    if (!renderedHtmlEl) return;
+
+    await electron.ipcRenderer.exportHtml(renderedHtmlEl.innerHTML);
+  }
+
   return (
     <section className="controls">
       <button type="button" id="new-file">
@@ -38,8 +45,8 @@ const ActionsBar = ({ content, file, onFileLoad }: ActionsBarProps) => {
       <button type="button" id="revert" disabled={content === file?.content}>
         Revert
       </button>
-      <button type="button" id="save-html" disabled={!content}>
-        Save HTML
+      <button type="button" id="save-html" disabled={!content} onClick={handleExportHtmlButton}>
+        Export as HTML
       </button>
       <button type="button" id="show-file" disabled={!file?.content}>
         Show File

@@ -11,6 +11,9 @@ contextBridge.exposeInMainWorld('electron', {
     notifyContentChange(file, content) {
       return ipcRenderer.invoke('ipc-content-changed', file, content);
     },
+    exportHtml(content) {
+      return ipcRenderer.invoke('ipc-export-html', content);
+    },
     on(channel, func) {
       const validChannels = ['ipc-example'];
       if (validChannels.includes(channel)) {

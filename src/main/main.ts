@@ -16,7 +16,6 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import WindowTitle from './WindowTitle';
-import { fsyncSync } from 'original-fs';
 
 export default class AppUpdater {
   constructor() {
@@ -86,6 +85,21 @@ ipcMain.handle('ipc-save-file', async (_event, file, content) => {
   return {
     path,
     content
+  }
+})
+
+ipcMain.handle('ipc-export-html', async (_event, content) => {
+  const { filePath, canceled } = await dialog.showSaveDialog({
+    title: 'Export as HTML',
+    filters: [{ name: 'HTML Document', extensions: ['html'] }]
+  })
+  if (canceled || !filePath) return;
+
+  writeFileSync(filePath, content)
+  shell.openPath(filePath);
+  return {
+    path: filePath,
+    canceled
   }
 })
 
