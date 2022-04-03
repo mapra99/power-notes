@@ -15,6 +15,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import WindowTitle from './WindowTitle';
 
 export default class AppUpdater {
   constructor() {
@@ -25,6 +26,7 @@ export default class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+const windowTitle = new WindowTitle({});
 
 const getFileFromUser = async () => {
   const result = await dialog.showOpenDialog({
@@ -52,22 +54,21 @@ const getFileFromUser = async () => {
    };
 };
 
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
-});
-
-ipcMain.handle('ipc-open-file', async (e) => {
+ipcMain.handle('ipc-open-file', async () => {
   const result = await getFileFromUser();
   if (!result) return;
 
   const { content, path: filePath } = result;
-  const windowTitle = `${path.basename(filePath)} - Power Notes`
-  mainWindow?.setTitle(windowTitle)
+  windowTitle.fileName = path.basename(filePath)
+  mainWindow?.setTitle(windowTitle.generate())
 
   return content;
 });
+
+ipcMain.handle('ipc-content-changed', (_event, { textContent, fileContent}) => {
+  windowTitle.unsavedChanges = textContent !== fileContent
+  mainWindow?.setTitle(windowTitle.generate());
+})
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -115,6 +116,7 @@ const createWindow = async () => {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
+    title: windowTitle.generate()
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));

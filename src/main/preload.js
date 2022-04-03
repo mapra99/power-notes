@@ -2,11 +2,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
-    myPing() {
-      ipcRenderer.send('ipc-example', 'ping');
-    },
     getFileFromUser() {
       return ipcRenderer.invoke('ipc-open-file');
+    },
+    notifyContentChange(textContent, fileContent) {
+      return ipcRenderer.invoke('ipc-content-changed', { textContent, fileContent});
     },
     on(channel, func) {
       const validChannels = ['ipc-example'];

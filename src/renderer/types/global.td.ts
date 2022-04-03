@@ -2,6 +2,7 @@ export {};
 
 interface IpcRenderer {
   getFileFromUser: any;
+  notifyContentChange: any;
 }
 
 interface Electron {
