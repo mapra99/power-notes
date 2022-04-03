@@ -45,8 +45,11 @@ const getFileFromUser = async () => {
   const { canceled, filePaths } = result;
   if (canceled || filePaths.length === 0) return null;
 
-  const file = readFileSync(filePaths[0]).toString();
-  return file;
+  const content = readFileSync(filePaths[0]).toString();
+  return {
+    content,
+    path: filePaths[0]
+   };
 };
 
 ipcMain.on('ipc-example', async (event, arg) => {
@@ -55,10 +58,15 @@ ipcMain.on('ipc-example', async (event, arg) => {
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
-ipcMain.handle('ipc-open-file', async () => {
-  const file = await getFileFromUser();
+ipcMain.handle('ipc-open-file', async (e) => {
+  const result = await getFileFromUser();
+  if (!result) return;
 
-  return file;
+  const { content, path: filePath } = result;
+  const windowTitle = `${path.basename(filePath)} - Power Notes`
+  mainWindow?.setTitle(windowTitle)
+
+  return content;
 });
 
 if (process.env.NODE_ENV === 'production') {
