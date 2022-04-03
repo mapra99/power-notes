@@ -13,7 +13,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
-import { resolveHtmlPath, getFileFromUser, writeFileFromUser, exportHtmlContent } from './utils';
+import { resolveHtmlPath, writeFileFromUser, exportHtmlContent } from './utils';
 import WindowTitle from './WindowTitle';
 
 export default class AppUpdater {
@@ -26,13 +26,6 @@ export default class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 const windowTitle = new WindowTitle({});
-
-ipcMain.handle('ipc-open-file', async () => {
-  const result = await getFileFromUser();
-  if (!result) return;
-
-  return result;
-});
 
 ipcMain.handle('ipc-content-changed', (_event, file, content) => {
   windowTitle.unsavedChanges = content !== file?.content;
@@ -116,7 +109,7 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow, ipcMain);
+  const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
 
   // Open urls in the user's browser

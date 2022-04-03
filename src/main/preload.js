@@ -1,5 +1,12 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+const VALID_INCOMING_CHANNELS = [
+  'ipc-file-opened',
+  'ipc-new-file',
+  'ipc-file-save-attempt',
+  'ipc-html-export-attempt'
+]
+
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
     getFileFromUser() {
@@ -15,15 +22,13 @@ contextBridge.exposeInMainWorld('electron', {
       return ipcRenderer.invoke('ipc-export-html', content);
     },
     on(channel, func) {
-      const validChannels = ['ipc-example'];
-      if (validChannels.includes(channel)) {
+      if (VALID_INCOMING_CHANNELS.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
     },
     once(channel, func) {
-      const validChannels = ['ipc-example'];
-      if (validChannels.includes(channel)) {
+      if (VALID_INCOMING_CHANNELS.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.once(channel, (event, ...args) => func(...args));
       }

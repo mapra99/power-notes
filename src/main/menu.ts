@@ -6,6 +6,8 @@ import {
   MenuItemConstructorOptions,
 } from 'electron';
 
+import { getFileFromUser } from './utils'
+
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
   submenu?: DarwinMenuItemConstructorOptions[] | Menu;
@@ -84,6 +86,38 @@ export default class MenuBuilder {
         },
       ],
     };
+
+    const subMenuFile: DarwinMenuItemConstructorOptions = {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New File',
+          accelerator: 'Command+N',
+          click: () => { this.mainWindow.webContents.send('ipc-new-file') }
+        },
+        {
+          label: 'Open File',
+          accelerator: 'Command+O',
+          click: async () => {
+            const result = await getFileFromUser();
+            this.mainWindow.webContents.send('ipc-file-opened', result);
+          }
+        }, {
+          label: 'Save File',
+          accelerator: 'Command+S',
+          click: async () => {
+            this.mainWindow.webContents.send('ipc-file-save-attempt');
+          }
+        }, {
+          label: 'Export as HTML',
+          accelerator: 'Command+Shift+S',
+          click: async () => {
+            this.mainWindow.webContents.send('ipc-html-export-attempt')
+          }
+        }
+      ]
+    }
+
     const subMenuEdit: DarwinMenuItemConstructorOptions = {
       label: 'Edit',
       submenu: [
@@ -189,7 +223,7 @@ export default class MenuBuilder {
         ? subMenuViewDev
         : subMenuViewProd;
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
+    return [subMenuAbout, subMenuFile, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
   }
 
   buildDefaultTemplate() {

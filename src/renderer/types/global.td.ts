@@ -5,6 +5,8 @@ interface IpcRenderer {
   saveFile: any;
   notifyContentChange: any;
   exportHtml: any;
+  on: any;
+  once: any;
 }
 
 interface Electron {
