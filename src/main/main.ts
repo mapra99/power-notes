@@ -9,12 +9,11 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { readFileSync, writeFileSync } from 'fs';
-import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
+import { resolveHtmlPath, getFileFromUser, writeFileFromUser, exportHtmlContent } from './utils';
 import WindowTitle from './WindowTitle';
 
 export default class AppUpdater {
@@ -27,32 +26,6 @@ export default class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 const windowTitle = new WindowTitle({});
-
-const getFileFromUser = async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ['openFile'],
-    title: 'Open Power Note Document',
-    filters: [
-      {
-        name: 'Markdown Files',
-        extensions: ['md', 'markdown', 'mdown'],
-      },
-      {
-        name: 'Text Files',
-        extensions: ['txt', 'text'],
-      },
-    ],
-  });
-
-  const { canceled, filePaths } = result;
-  if (canceled || filePaths.length === 0) return null;
-
-  const content = readFileSync(filePaths[0]).toString();
-  return {
-    content,
-    path: filePaths[0]
-   };
-};
 
 ipcMain.handle('ipc-open-file', async () => {
   const result = await getFileFromUser();
@@ -69,38 +42,11 @@ ipcMain.handle('ipc-content-changed', (_event, file, content) => {
 })
 
 ipcMain.handle('ipc-save-file', async (_event, file, content) => {
-  let path = file?.path
-
-  if (!path) {
-    const { filePath, canceled } = await dialog.showSaveDialog({
-      title: 'Save Document',
-      filters: [{ name: 'Markdown Document', extensions: ['md'] }]
-    })
-    if (canceled || !filePath) return;
-
-    path = filePath;
-  }
-
-  writeFileSync(path, content)
-  return {
-    path,
-    content
-  }
+  return await writeFileFromUser(file, content);
 })
 
 ipcMain.handle('ipc-export-html', async (_event, content) => {
-  const { filePath, canceled } = await dialog.showSaveDialog({
-    title: 'Export as HTML',
-    filters: [{ name: 'HTML Document', extensions: ['html'] }]
-  })
-  if (canceled || !filePath) return;
-
-  writeFileSync(filePath, content)
-  shell.openPath(filePath);
-  return {
-    path: filePath,
-    canceled
-  }
+  return await exportHtmlContent(content);
 })
 
 if (process.env.NODE_ENV === 'production') {
@@ -170,7 +116,7 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
+  const menuBuilder = new MenuBuilder(mainWindow, ipcMain);
   menuBuilder.buildMenu();
 
   // Open urls in the user's browser
