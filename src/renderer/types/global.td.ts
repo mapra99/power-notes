@@ -2,6 +2,7 @@ export {};
 
 interface IpcRenderer {
   getFileFromUser: any;
+  saveFile: any;
   notifyContentChange: any;
 }
 

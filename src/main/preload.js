@@ -5,8 +5,11 @@ contextBridge.exposeInMainWorld('electron', {
     getFileFromUser() {
       return ipcRenderer.invoke('ipc-open-file');
     },
-    notifyContentChange(textContent, fileContent) {
-      return ipcRenderer.invoke('ipc-content-changed', { textContent, fileContent});
+    saveFile(file, content) {
+      return ipcRenderer.invoke('ipc-save-file', file, content);
+    },
+    notifyContentChange(file, content) {
+      return ipcRenderer.invoke('ipc-content-changed', file, content);
     },
     on(channel, func) {
       const validChannels = ['ipc-example'];

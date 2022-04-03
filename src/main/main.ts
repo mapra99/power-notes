@@ -9,13 +9,14 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import WindowTitle from './WindowTitle';
+import { fsyncSync } from 'original-fs';
 
 export default class AppUpdater {
   constructor() {
@@ -58,16 +59,34 @@ ipcMain.handle('ipc-open-file', async () => {
   const result = await getFileFromUser();
   if (!result) return;
 
-  const { content, path: filePath } = result;
-  windowTitle.fileName = path.basename(filePath)
-  mainWindow?.setTitle(windowTitle.generate())
-
-  return content;
+  return result;
 });
 
-ipcMain.handle('ipc-content-changed', (_event, { textContent, fileContent}) => {
-  windowTitle.unsavedChanges = textContent !== fileContent
+ipcMain.handle('ipc-content-changed', (_event, file, content) => {
+  windowTitle.unsavedChanges = content !== file?.content;
+  windowTitle.fileName = file ? path.basename(file.path) : undefined;
+
   mainWindow?.setTitle(windowTitle.generate());
+})
+
+ipcMain.handle('ipc-save-file', async (_event, file, content) => {
+  let path = file?.path
+
+  if (!path) {
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: 'Save Document',
+      filters: [{ name: 'Markdown Document', extensions: ['md'] }]
+    })
+    if (canceled || !filePath) return;
+
+    path = filePath;
+  }
+
+  writeFileSync(path, content)
+  return {
+    path,
+    content
+  }
 })
 
 if (process.env.NODE_ENV === 'production') {
@@ -110,8 +129,9 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728,
+    width: 5000,
+    height: 5000,
+    simpleFullscreen: true,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

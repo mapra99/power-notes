@@ -4,31 +4,36 @@ import MarkdownParser from '../../components/MarkdownParser';
 
 import './Home.scss';
 
+export interface File {
+  content: string;
+  path: string
+}
+
 const Home = () => {
   const [content, setContent] = useState('');
-  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
-  const handleFileContent = (newContent: string) => {
-    setContent(newContent);
-    setFileContent(newContent);
+  const handleFileLoad = (newFile: File) => {
+    setContent(newFile.content);
+    setFile(newFile);
   }
 
   useEffect(() => {
-    window.electron.ipcRenderer.notifyContentChange(content, fileContent);
-  }, [content, fileContent])
+    window.electron.ipcRenderer.notifyContentChange(file, content);
+  }, [content, file])
 
   return (
     <>
       <ActionsBar
         content={content}
-        fileContent={fileContent}
-        onFileLoad={handleFileContent}
+        file={file}
+        onFileLoad={handleFileLoad}
       />
 
       <section className="content">
         <MarkdownParser
           content={content}
-          onChange={(newContent) => setContent(newContent)}
+          onChange={(newContent: string) => setContent(newContent)}
         />
       </section>
     </>
